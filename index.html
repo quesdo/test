@@ -15,36 +15,73 @@
         body {
             margin: 0;
             font-family: system-ui, -apple-system, sans-serif;
-        }
-        
-        .ds-card {
-            background: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-            padding: 1.5rem;
-            margin: 1rem;
-            height: calc(100vh - 140px);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
         
+        .header {
+            background: var(--ds-blue);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            height: 80px;
+        }
+        
+        .logo {
+            height: 60px;
+            margin-right: 20px;
+        }
+        
+        .header-text {
+            color: white;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 1rem;
+            gap: 1rem;
+            background: #f0f2f5;
+            height: calc(100vh - 80px);
+        }
+        
+        .indicators-panel {
+            flex: 3;
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: auto;
+        }
+        
+        .levers-panel {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 300px;
+            overflow: auto;
+        }
+        
         .vertical-progress {
-            width: 140px;
-            height: 500px;
+            width: 180px;
+            height: 600px;
             position: relative;
             background: #f3f4f6;
             border-radius: 12px;
             margin: 0 auto;
-            margin-bottom: 100px;
             overflow: visible;
         }
         
         .indicators-container {
-            flex-grow: 1;
             display: flex;
             justify-content: space-around;
             align-items: center;
+            height: calc(100% - 60px);
             padding: 1rem;
+            min-height: 700px;
         }
         
         .vertical-fill {
@@ -57,7 +94,7 @@
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             bottom: 0;
         }
         
@@ -73,7 +110,7 @@
         .target-label {
             position: absolute;
             color: #ef4444;
-            font-size: 1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             white-space: nowrap;
             left: calc(100% + 10px);
@@ -87,9 +124,9 @@
             background-color: #1a1a1a;
             color: white;
             text-align: center;
-            padding: 8px 12px;
+            padding: 12px 16px;
             border-radius: 6px;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             pointer-events: none;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
@@ -97,7 +134,7 @@
         .lever-button {
             position: relative;
             width: 100%;
-            padding: 1rem;
+            padding: 1.2rem;
             margin-bottom: 0.5rem;
             background-color: white;
             border: 2px solid var(--ds-blue);
@@ -105,6 +142,7 @@
             transition: all 0.3s ease;
             text-align: left;
             cursor: pointer;
+            font-size: 1.2rem;
         }
         
         .lever-button:hover {
@@ -116,13 +154,20 @@
             visibility: visible;
         }
         
+        .lever-button.active {
+            background-color: var(--ds-blue);
+            color: white;
+        }
+        
         .improvement-badge {
             background: #f8fafc;
             border: 2px solid;
             border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 1.25rem;
+            padding: 12px 24px;
+            font-size: 1.5rem;
             font-weight: 700;
+            margin-top: 1.5rem;
+            text-align: center;
             transition: all 0.3s ease;
         }
         
@@ -137,44 +182,40 @@
         }
         
         .indicator-title {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             color: #374151;
+            text-align: center;
         }
         
         .base-value {
-            font-size: 1.1rem;
-            margin-top: 1rem;
-        }
-
-        .lever-button.active {
-            background-color: var(--ds-blue);
-            color: white;
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            color: #4b5563;
         }
     </style>
 </head>
 <body>
-    <div class="min-h-screen bg-gray-50">
-        <div class="bg-[#005386] text-white p-6">
-            <h1 class="text-3xl font-bold">QCD Dashboard - Dassault Systèmes</h1>
-            <p class="text-lg opacity-80 mt-2">Quality, Capacity & Delivery Monitoring</p>
+    <header class="header">
+        <img src="logo.png" alt="Dassault Systèmes" class="logo">
+        <div class="header-text">
+            <p class="text-lg">Quality, Capacity & Delivery Monitoring</p>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="indicators-panel">
+            <h2 class="text-3xl font-bold mb-4 text-[#005386]">QCD Performance Indicators</h2>
+            <div class="indicators-container" id="indicators"></div>
         </div>
 
-        <div class="container mx-auto p-4">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div class="ds-card lg:col-span-3">
-                    <h2 class="text-2xl font-bold mb-4 text-[#005386]">QCD Performance Indicators</h2>
-                    <div class="indicators-container" id="indicators"></div>
-                </div>
-
-                <div class="ds-card lg:col-span-1">
-                    <h2 class="text-2xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
-                    <div class="space-y-2 overflow-auto flex-grow" id="levers"></div>
-                </div>
-            </div>
+        <div class="levers-panel">
+            <h2 class="text-3xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
+            <div class="space-y-3" style="height: calc(100% - 60px)" id="levers"></div>
         </div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="script.js"></script>
