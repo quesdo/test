@@ -79,8 +79,6 @@ let switchStates = {
 function handleRealtimeUpdate(payload) {
  console.log('Changement détecté:', payload);
 
- const { eventType, new: newData, old: oldData } = payload;
-
  window.reload();
 }
 
@@ -200,7 +198,7 @@ async function fetchIndicators() {
         }
 		
 		// Souscrire aux changements dans la table 'my_table'
-		supabase
+		supabaseClient
 		 .channel('public:levers')
 		 .on('postgres_changes', { event: '*', schema: 'public', table: 'levers' }, handleRealtimeUpdate)
 		 .subscribe();
