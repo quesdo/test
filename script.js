@@ -119,6 +119,7 @@ function getTotalImpact(key) {
 }
 
 function handleLeverClick(leverName) {
+	console.log('tot');
     switchStates[leverName] = !switchStates[leverName];
 	const { error } = await supabase
 		.from('levers')
