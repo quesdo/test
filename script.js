@@ -74,6 +74,16 @@ let switchStates = {
     line: false
 };
 
+
+// Fonction pour gérer les changements
+function handleRealtimeUpdate(payload) {
+ console.log('Changement détecté:', payload);
+
+ const { eventType, new: newData, old: oldData } = payload;
+
+ window.reload();
+}
+
 function calculateValue(key) {
     const baseValue = INDICATORS[key].baseline;
     const totalImpact = getTotalImpact(key);
@@ -188,6 +198,12 @@ async function fetchIndicators() {
             };
             updateDisplay();
         }
+		
+		// Souscrire aux changements dans la table 'my_table'
+		supabase
+		 .channel('public:levers')
+		 .on('postgres_changes', { event: '*', schema: 'public', table: 'levers' }, handleRealtimeUpdate)
+		 .subscribe();
     } catch (err) {
         console.error('Error fetching indicators:', err);
     }
