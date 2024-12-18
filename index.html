@@ -18,7 +18,6 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
         
         .header {
@@ -62,18 +61,17 @@
             border-radius: 8px;
             padding: 1.5rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            min-width: 400px;
+            min-width: 300px;
             overflow: auto;
         }
         
         .vertical-progress {
-            width: 220px;
+            width: 180px;
             height: 600px;
             position: relative;
             background: #f3f4f6;
             border-radius: 12px;
             margin: 0 auto;
-            margin-bottom: 1rem;
             overflow: visible;
         }
         
@@ -96,14 +94,14 @@
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 2.5rem;
+            font-size: 1.4rem;
             bottom: 0;
         }
         
         .target-line {
             position: absolute;
             width: 100%;
-            height: 6px;
+            height: 4px;
             background-color: #ef4444;
             left: 0;
             z-index: 2;
@@ -112,7 +110,7 @@
         .target-label {
             position: absolute;
             color: #ef4444;
-            font-size: 1.8rem;
+            font-size: 1.2rem;
             font-weight: bold;
             white-space: nowrap;
             left: calc(100% + 10px);
@@ -136,23 +134,20 @@
         .lever-button {
             position: relative;
             width: 100%;
-            padding: 1.8rem 1.5rem;
-            margin-bottom: 0.8rem;
+            padding: 1.2rem;
+            margin-bottom: 0.5rem;
             background-color: white;
-            border: 3px solid var(--ds-blue);
-            border-radius: 0.7rem;
+            border: 2px solid var(--ds-blue);
+            border-radius: 0.5rem;
             transition: all 0.3s ease;
             text-align: left;
             cursor: pointer;
-            font-size: 1.6rem;
-            font-weight: 600;
+            font-size: 1.2rem;
         }
         
         .lever-button:hover {
             background-color: var(--ds-blue);
             color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .lever-button:hover .tooltip {
@@ -166,79 +161,39 @@
         
         .improvement-badge {
             background: #f8fafc;
-            border: 3px solid;
-            border-radius: 10px;
-            padding: 16px 28px;
-            font-size: 2rem;
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1.5rem;
             font-weight: 700;
+            margin-top: 1.5rem;
             text-align: center;
             transition: all 0.3s ease;
-            margin-bottom: 1rem;
         }
         
         .improvement-badge.positive {
             border-color: var(--ds-green);
             color: var(--ds-green);
-            background-color: rgba(110, 190, 68, 0.1);
         }
         
         .improvement-badge.negative {
             border-color: var(--ds-blue);
             color: var(--ds-blue);
-            background-color: rgba(0, 83, 134, 0.1);
         }
         
         .indicator-title {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: bold;
             margin-bottom: 2rem;
             color: #374151;
             text-align: center;
         }
         
-        .panel-title {
-            color: var(--ds-blue);
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 3px solid var(--ds-blue);
-        }
-
-        .initial-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--ds-blue);
-            background-color: rgba(0, 83, 134, 0.1);
-            padding: 1rem 2rem;
-            border-radius: 10px;
+        .base-value {
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
             text-align: center;
-            margin-top: 1rem;
-            border: 3px solid var(--ds-blue);
-        }
-        
-        @media (max-width: 1280px) {
-            .main-content {
-                flex-direction: column;
-            }
-            
-            .levers-panel {
-                min-width: 100%;
-            }
-            
-            .vertical-progress {
-                width: 180px;
-                height: 400px;
-            }
-            
-            .indicator-title {
-                font-size: 2rem;
-            }
-            
-            .lever-button {
-                font-size: 1.4rem;
-                padding: 1.4rem 1.2rem;
-            }
+            color: #4b5563;
         }
     </style>
 </head>
@@ -246,183 +201,23 @@
     <header class="header">
         <img src="logo.png" alt="Dassault Systèmes" class="logo">
         <div class="header-text">
-            <p class="text-xl">Quality, Capacity & Delivery Monitoring</p>
+            <p class="text-lg">Quality, Capacity & Delivery Monitoring</p>
         </div>
     </header>
 
     <main class="main-content">
         <div class="indicators-panel">
-            <h2 class="panel-title">QCD Performance Indicators</h2>
+            <h2 class="text-3xl font-bold mb-4 text-[#005386]">QCD Performance Indicators</h2>
             <div class="indicators-container" id="indicators"></div>
         </div>
 
         <div class="levers-panel">
-            <h2 class="panel-title">Improvement Levers</h2>
-            <div class="space-y-4" style="height: calc(100% - 60px)" id="levers"></div>
+            <h2 class="text-3xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
+            <div class="space-y-3" style="height: calc(100% - 60px)" id="levers"></div>
         </div>
     </main>
 
-    <script>
-        const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k';
-
-        const OPTIONS_IMPACT = {
-            amr: { quality: -0.6, capacity: +5.3, delivery: +0.7 },
-            ar: { quality: -0.6, capacity: +6.3, delivery: +0.7 },
-            kitting: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
-            assembly: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
-            mes: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
-            pick: { quality: -0.6, capacity: +3.6, delivery: +0.7 },
-            line: { quality: -0.5, capacity: +0, delivery: +0.8 }
-        };
-
-        const ACRONYM_DEFINITIONS = {
-            amr: "Autonomous Mobile Robot",
-            ar: "Augmented Reality",
-            kitting: "Kit Preparation Process",
-            assembly: "Assembly Line Optimization",
-            mes: "Manufacturing Execution System",
-            pick: "Pick-to-Light System",
-            line: "Production Line Balancing"
-        };
-
-        const INDICATORS = {
-            quality: { 
-                title: "Quality", 
-                target: 0.1,
-                baseline: 4.0,
-                min: 0.1,
-                max: 4.0,
-                isQuality: true,
-                unit: " scrap/day",
-                getPercentage: (value, baseline) => ((baseline - value) / baseline * 100).toFixed(1)
-            },
-            capacity: { 
-                title: "Capacity", 
-                target: 60,
-                baseline: 37,
-                min: 0,
-                max: 70,
-                isQuality: false,
-                unit: "/h",
-                getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
-            },
-            delivery: { 
-                title: "Delivery", 
-                target: 98,
-                baseline: 93,
-                min: 0,
-                max: 100,
-                isQuality: false,
-                unit: "%",
-                getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
-            }
-        };
-
-        let metrics = {
-            quality: 4.0,
-            capacity: 37,
-            delivery: 93
-        };
-
-        let switchStates = {
-            amr: false,
-            ar: false,
-            kitting: false,
-            assembly: false,
-            mes: false,
-            pick: false,
-            line: false
-        };
-
-        function calculateValue(key) {
-            const baseValue = INDICATORS[key].baseline;
-            const totalImpact = Object.keys(switchStates)
-                .reduce((acc, lever) => {
-                    if (switchStates[lever]) {
-                        acc += OPTIONS_IMPACT[lever][key];
-                    }
-                    return acc;
-                }, 0);
-            const newValue = baseValue + totalImpact;
-            return Math.min(Math.max(newValue, INDICATORS[key].min), INDICATORS[key].max);
-        }
-
-        function createProgressBar(key, config) {
-            const value = calculateValue(key);
-            const percentage = ((value - config.min) / (config.max - config.min)) * 100;
-            const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
-            
-            const isTargetReached = config.isQuality ? value <= config.target : value >= config.target;
-            const progressColor = isTargetReached ? '#6EBE44' : '#005386';
-            
-            const improvementPercentage = config.getPercentage(value, config.baseline);
-            
-            return `
-                <div class="text-center">
-                    <div class="indicator-title">${config.title}</div>
-                    <div class="relative vertical-progress">
-                        <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
-                            <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
-                        </div>
-                        <div class="target-line" style="bottom: ${targetPercentage}%"></div>
-                        <div class="target-label" style="bottom: ${targetPercentage}%">Target: ${config.target}${config.unit}</div>
-                    </div>
-                    <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
-                        ${Math.abs(improvementPercentage)}%
-                    </div>
-                    <div class="initial-value">
-                        Initial: ${config.baseline}${config.unit}
-                    </div>
-                </div>
-            `;
-        }
-
-        function createLeverButton(lever) {
-            const container = document.createElement('div');
-            container.innerHTML = `
-                <button class="lever-button ${switchStates[lever] ? 'active' : ''}" data-lever="${lever}">
-                    ${ACRONYM_DEFINITIONS[lever]}
-                    <div class="tooltip">Impact - Quality: ${OPTIONS_IMPACT[lever].quality}%, 
-                        Capacity: ${OPTIONS_IMPACT[lever].capacity}%, 
-                        Delivery: ${OPTIONS_IMPACT[lever].delivery}%</div>
-                </button>
-            `;
-            
-            const button = container.querySelector('button');
-            button.addEventListener('click', () => {
-                switchStates[lever] = !switchStates[lever];
-                updateDisplay();
-            });
-            
-            return container.firstElementChild;
-        }
-
-        function updateDisplay() {
-            const indicatorsDiv = document.getElementById("indicators");
-            if (indicatorsDiv) {
-                indicatorsDiv.innerHTML = Object.keys(INDICATORS)
-                    .map(key => createProgressBar(key, INDICATORS[key]))
-                    .join('');
-            }
-
-            const leversDiv = document.getElementById("levers");
-            if (leversDiv) {
-                leversDiv.innerHTML = '';
-                Object.keys(OPTIONS_IMPACT).forEach(lever => {
-                    const button = createLeverButton(lever);
-                    leversDiv.appendChild(button);
-                });
-            }
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Initializing application...');
-            updateDisplay();
-        });
-    </script>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="script.js"></script>
 </body>
-</html> 
+</html>
