@@ -118,13 +118,19 @@ function getTotalImpact(key) {
     }, 0);
 }
 
-function handleLeverClick(leverName) {
+async function handleLeverClick(leverName) {
 	console.log('tot');
     switchStates[leverName] = !switchStates[leverName];
-	const { error } = await supabase
+	
+	try {
+		const { error } = await supabaseClient
 		.from('levers')
 		.update({ is_active: switchStates[leverName] })
 		.eq('name', leverName);
+	} catch (err) {
+        console.error('Error updating levers:', err);
+    }
+	
 
     updateDisplay();
 }
