@@ -74,12 +74,22 @@ let switchStates = {
     line: false
 };
 
-
-// Fonction pour gérer les changements
+// Fonction pour gérer les changements en temps réel
 function handleRealtimeUpdate(payload) {
- console.log('Changement détecté:', payload);
-
- window.reload();
+    console.log('Changement détecté:', payload);
+    
+    if (payload.new) {
+        const leverName = payload.new.name;
+        const isActive = payload.new.is_active;
+        
+        console.log(`Mise à jour du levier ${leverName} à ${isActive}`);
+        
+        // Mettre à jour le state local
+        switchStates[leverName] = isActive;
+        
+        // Mettre à jour l'affichage
+        updateDisplay();
+    }
 }
 
 function calculateValue(key) {
@@ -127,20 +137,27 @@ function getTotalImpact(key) {
 }
 
 async function handleLeverClick(leverName) {
-	console.log('tot');
+    // Mettre à jour l'état local
     switchStates[leverName] = !switchStates[leverName];
-	
-	try {
-		const { error } = await supabaseClient
-		.from('levers')
-		.update({ is_active: switchStates[leverName] })
-		.eq('name', leverName);
-	} catch (err) {
-        console.error('Error updating levers:', err);
-    }
-	
+    
+    try {
+        // Mettre à jour la base de données
+        const { error } = await supabaseClient
+            .from('levers')
+            .update({ is_active: switchStates[leverName] })
+            .eq('name', leverName);
 
-    updateDisplay();
+        if (error) {
+            throw error;
+        }
+        
+        // Pas besoin de mettre à jour l'affichage ici car il sera mis à jour via handleRealtimeUpdate
+    } catch (err) {
+        console.error('Error updating lever:', err);
+        // En cas d'erreur, revenir à l'état précédent
+        switchStates[leverName] = !switchStates[leverName];
+        updateDisplay();
+    }
 }
 
 function createLeverButton(lever) {
@@ -196,12 +213,25 @@ async function fetchIndicators() {
             };
             updateDisplay();
         }
-		
-		// Souscrire aux changements dans la table 'my_table'
-		supabaseClient
-		 .channel('public:levers')
-		 .on('postgres_changes', { event: '*', schema: 'public', table: 'levers' }, handleRealtimeUpdate)
-		 .subscribe();
+
+        // S'abonner aux changements de la table levers
+        const channel = supabaseClient
+            .channel('custom-channel')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'levers'
+                },
+                handleRealtimeUpdate
+            )
+            .subscribe((status) => {
+                console.log('Statut de la souscription:', status);
+            });
+
+        console.log('Canal créé:', channel);
+
     } catch (err) {
         console.error('Error fetching indicators:', err);
     }
@@ -229,6 +259,7 @@ async function fetchLevers() {
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initialisation de l\'application...');
     updateDisplay();
     fetchIndicators();
     fetchLevers();
