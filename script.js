@@ -74,20 +74,13 @@ let switchStates = {
     line: false
 };
 
-// Fonction pour gérer les changements en temps réel
+let channel = null;
+
 function handleRealtimeUpdate(payload) {
-    console.log('Changement détecté:', payload);
-    
-    if (payload.new) {
-        const leverName = payload.new.name;
-        const isActive = payload.new.is_active;
-        
-        console.log(`Mise à jour du levier ${leverName} à ${isActive}`);
-        
-        // Mettre à jour le state local
-        switchStates[leverName] = isActive;
-        
-        // Mettre à jour l'affichage
+    console.log('Changement reçu:', payload);
+    if (payload.new && payload.new.name) {
+        console.log(`Mise à jour du levier ${payload.new.name} à ${payload.new.is_active}`);
+        switchStates[payload.new.name] = payload.new.is_active;
         updateDisplay();
     }
 }
@@ -137,25 +130,24 @@ function getTotalImpact(key) {
 }
 
 async function handleLeverClick(leverName) {
-    // Mettre à jour l'état local
-    switchStates[leverName] = !switchStates[leverName];
+    const newState = !switchStates[leverName];
     
     try {
-        // Mettre à jour la base de données
         const { error } = await supabaseClient
             .from('levers')
-            .update({ is_active: switchStates[leverName] })
+            .update({ is_active: newState })
             .eq('name', leverName);
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
         
-        // Pas besoin de mettre à jour l'affichage ici car il sera mis à jour via handleRealtimeUpdate
+        // Mise à jour locale immédiate
+        switchStates[leverName] = newState;
+        updateDisplay();
+        
     } catch (err) {
         console.error('Error updating lever:', err);
         // En cas d'erreur, revenir à l'état précédent
-        switchStates[leverName] = !switchStates[leverName];
+        switchStates[leverName] = !newState;
         updateDisplay();
     }
 }
@@ -197,6 +189,35 @@ function updateDisplay() {
     }
 }
 
+function setupRealtimeSubscription() {
+    if (channel) {
+        channel.unsubscribe();
+    }
+
+    channel = supabaseClient
+        .channel('levers-channel')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'levers'
+            },
+            handleRealtimeUpdate
+        )
+        .subscribe((status) => {
+            console.log('Status de la souscription:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('Connecté avec succès aux mises à jour en temps réel');
+            }
+            if (status === 'CHANNEL_ERROR') {
+                console.error('Erreur de connexion au canal');
+                // Tentative de reconnexion après 5 secondes
+                setTimeout(setupRealtimeSubscription, 5000);
+            }
+        });
+}
+
 async function fetchIndicators() {
     try {
         const { data, error } = await supabaseClient
@@ -213,25 +234,6 @@ async function fetchIndicators() {
             };
             updateDisplay();
         }
-
-        // S'abonner aux changements de la table levers
-        const channel = supabaseClient
-            .channel('custom-channel')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'levers'
-                },
-                handleRealtimeUpdate
-            )
-            .subscribe((status) => {
-                console.log('Statut de la souscription:', status);
-            });
-
-        console.log('Canal créé:', channel);
-
     } catch (err) {
         console.error('Error fetching indicators:', err);
     }
@@ -263,4 +265,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDisplay();
     fetchIndicators();
     fetchLevers();
+    setupRealtimeSubscription();
 });
