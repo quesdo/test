@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard QCD - Dassault Systèmes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --ds-blue: #005386;
+            --ds-green: #6EBE44;
+        }
+        
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .ds-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            padding: 1.5rem;
+            margin: 1rem;
+            height: calc(100vh - 140px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .vertical-progress {
+            width: 140px;
+            height: 500px;
+            position: relative;
+            background: #f3f4f6;
+            border-radius: 12px;
+            margin: 0 auto;
+            margin-bottom: 100px;
+            overflow: visible;
+        }
+        
+        .indicators-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 1rem;
+        }
+        
+        .vertical-fill {
+            position: absolute;
+            width: 100%;
+            border-radius: 12px;
+            transition: height 0.6s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            bottom: 0;
+        }
+        
+        .target-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background-color: #ef4444;
+            left: 0;
+            z-index: 2;
+        }
+        
+        .target-label {
+            position: absolute;
+            color: #ef4444;
+            font-size: 1rem;
+            font-weight: bold;
+            white-space: nowrap;
+            left: calc(100% + 10px);
+            transform: translateY(-50%);
+        }
+        
+        .tooltip {
+            visibility: hidden;
+            position: fixed;
+            z-index: 9999;
+            background-color: #1a1a1a;
+            color: white;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .lever-button {
+            position: relative;
+        }
+        
+        .lever-button:hover .tooltip {
+            visibility: visible;
+        }
+        
+        .improvement-badge {
+            background: #f8fafc;
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        
+        .improvement-badge.positive {
+            border-color: var(--ds-green);
+            color: var(--ds-green);
+        }
+        
+        .improvement-badge.negative {
+            border-color: var(--ds-blue);
+            color: var(--ds-blue);
+        }
+        
+        .indicator-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: #374151;
+        }
+        
+        .base-value {
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen bg-gray-50">
+        <div class="bg-[#005386] text-white p-6">
+            <h1 class="text-3xl font-bold">QCD Dashboard - Dassault Systèmes</h1>
+            <p class="text-lg opacity-80 mt-2">Quality, Capacity & Delivery Monitoring</p>
+        </div>
+
+        <div class="container mx-auto p-4">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="ds-card lg:col-span-3">
+                    <h2 class="text-2xl font-bold mb-4 text-[#005386]">QCD Performance Indicators</h2>
+                    <div class="indicators-container" id="indicators"></div>
+                </div>
+
+                <div class="ds-card lg:col-span-1">
+                    <h2 class="text-2xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
+                    <div class="space-y-2 overflow-auto flex-grow" id="levers"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.supabase.io/js/supabase.min.js"></script>
+    <script src="script.js"></script> <!-- Lien vers ton fichier JS externe -->
+</body>
+</html>
