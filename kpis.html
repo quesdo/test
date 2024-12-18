@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard QCD - Dassault Systèmes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --ds-blue: #005386;
+            --ds-green: #6EBE44;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .ds-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            padding: 1.5rem;
+            margin: 1rem;
+            height: calc(100vh - 140px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .indicator-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: #374151;
+        }
+
+        .lever-button {
+            position: relative;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            position: fixed;
+            z-index: 9999;
+            background-color: #1a1a1a;
+            color: white;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .lever-button:hover .tooltip {
+            visibility: visible;
+        }
+    </style>
+    <script>
+        const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co'; // Remplace par l'URL de ton projet Supabase
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k'; // Remplace par ta clé API publique
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        let switchStates = {};
+
+        async function fetchLevers() {
+            const { data, error } = await supabase.from('levers').select('*');
+            if (error) {
+                console.error('Erreur lors de la récupération des leviers :', error);
+                return;
+            }
+
+            data.forEach(item => {
+                switchStates[item.name] = item.is_active;
+            });
+
+            updateDisplay();
+        }
+
+        async function toggleLever(key) {
+            switchStates[key] = !switchStates[key];
+
+            const { error } = await supabase
+                .from('levers')
+                .update({ is_active: switchStates[key] })
+                .eq('name', key);
+
+            if (error) {
+                console.error('Erreur lors de la mise à jour :', error);
+                return;
+            }
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const leversContainer = document.getElementById('levers');
+            leversContainer.innerHTML = '';
+            
+            Object.entries(switchStates).forEach(([key, value]) => {
+                const button = document.createElement('div');
+                button.className = 'lever-button flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer';
+                button.innerHTML = `
+                    <div class="text-gray-700 font-medium">${key.toUpperCase()}</div>
+                    <div class="w-12 h-6 rounded-full p-1 ${value ? 'bg-[#005386]' : 'bg-gray-300'}">
+                        <div class="w-4 h-4 bg-white rounded-full transform transition-transform ${value ? 'translate-x-6' : ''}"></div>
+                    </div>
+                `;
+                button.onclick = () => toggleLever(key);
+                leversContainer.appendChild(button);
+            });
+        }
+
+        window.onload = fetchLevers;
+    </script>
+</head>
+<body>
+    <div class="min-h-screen bg-gray-50">
+        <div class="bg-[#005386] text-white p-6">
+            <h1 class="text-3xl font-bold">QCD Dashboard - Dassault Systèmes</h1>
+            <p class="text-lg opacity-80 mt-2">Quality, Capacity & Delivery Monitoring</p>
+        </div>
+
+        <div class="container mx-auto p-4">
+            <div class="ds-card">
+                <h2 class="text-2xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
+                <div class="space-y-4" id="levers"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
