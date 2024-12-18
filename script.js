@@ -1,9 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Création du client Supabase
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
 const OPTIONS_IMPACT = {
     amr: { quality: -0.6, capacity: +5.3, delivery: +0.7 },
@@ -78,8 +78,6 @@ function calculateValue(key) {
     const baseValue = INDICATORS[key].baseline;
     const totalImpact = getTotalImpact(key);
     const newValue = baseValue + totalImpact;
-    
-    // Ensure the value stays within min and max bounds
     return Math.min(Math.max(newValue, INDICATORS[key].min), INDICATORS[key].max);
 }
 
@@ -120,38 +118,51 @@ function getTotalImpact(key) {
     }, 0);
 }
 
+function handleLeverClick(leverName) {
+    switchStates[leverName] = !switchStates[leverName];
+    updateDisplay();
+}
+
+function createLeverButton(lever) {
+    const container = document.createElement('div');
+    const leverData = ACRONYM_DEFINITIONS[lever];
+    
+    container.innerHTML = `
+        <button class="lever-button ${switchStates[lever] ? 'active' : ''}" data-lever="${lever}">
+            <div class="text-xl font-semibold">${leverData}</div>
+            <div class="tooltip">Impact - Quality: ${OPTIONS_IMPACT[lever].quality}%, 
+                Capacity: ${OPTIONS_IMPACT[lever].capacity}%, 
+                Delivery: ${OPTIONS_IMPACT[lever].delivery}%</div>
+        </button>
+    `;
+    
+    const button = container.querySelector('button');
+    button.addEventListener('click', () => handleLeverClick(lever));
+    
+    return container.firstElementChild;
+}
+
 function updateDisplay() {
     const indicatorsDiv = document.getElementById("indicators");
     if (indicatorsDiv) {
-        indicatorsDiv.innerHTML = Object.keys(INDICATORS).map(key => createProgressBar(key, INDICATORS[key])).join('');
+        indicatorsDiv.innerHTML = Object.keys(INDICATORS)
+            .map(key => createProgressBar(key, INDICATORS[key]))
+            .join('');
     }
 
     const leversDiv = document.getElementById("levers");
     if (leversDiv) {
-        leversDiv.innerHTML = Object.keys(OPTIONS_IMPACT).map(lever => {
-            const leverData = ACRONYM_DEFINITIONS[lever];
-            return `
-                <button class="lever-button ${switchStates[lever] ? 'active' : ''}" data-lever="${lever}">
-                    <div class="text-xl font-semibold">${leverData}</div>
-                    <div class="tooltip">Impact - Quality: ${OPTIONS_IMPACT[lever].quality}%, Capacity: ${OPTIONS_IMPACT[lever].capacity}%, Delivery: ${OPTIONS_IMPACT[lever].delivery}%</div>
-                </button>
-            `;
-        }).join('');
-
-        // Add event listeners after updating the DOM
-        leversDiv.querySelectorAll('.lever-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const lever = this.dataset.lever;
-                switchStates[lever] = !switchStates[lever];
-                updateDisplay();
-            });
+        leversDiv.innerHTML = '';
+        Object.keys(OPTIONS_IMPACT).forEach(lever => {
+            const button = createLeverButton(lever);
+            leversDiv.appendChild(button);
         });
     }
 }
 
 async function fetchIndicators() {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('indicators')
             .select('*');
 
@@ -172,7 +183,7 @@ async function fetchIndicators() {
 
 async function fetchLevers() {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('levers')
             .select('*');
 
@@ -190,9 +201,9 @@ async function fetchLevers() {
     }
 }
 
-// Initial setup
+// Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    updateDisplay(); // Show initial state
-    fetchIndicators(); // Get data from Supabase
+    updateDisplay();
+    fetchIndicators();
     fetchLevers();
 });
