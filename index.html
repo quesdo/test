@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://esm.sh/ 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://kikivfglslrobwttvlvn.supabase.co">
     <title>Dashboard QCD - Dassault Systèmes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -103,6 +104,7 @@
             border-radius: 0.5rem;
             transition: all 0.3s ease;
             text-align: left;
+            cursor: pointer;
         }
         
         .lever-button:hover {
@@ -145,6 +147,11 @@
             font-size: 1.1rem;
             margin-top: 1rem;
         }
+
+        .lever-button.active {
+            background-color: var(--ds-blue);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -169,7 +176,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script type="module" src="script.js"></script>
+    <script src="https://esm.sh/@supabase/supabase-js@2" type="module"></script>
+    <script src="script.js" type="module"></script>
 </body>
 </html>

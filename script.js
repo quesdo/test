@@ -74,92 +74,23 @@ let switchStates = {
     line: false
 };
 
-// Initialisation immédiate de l'affichage avec les valeurs par défaut
-updateDisplay();
-
-async function fetchIndicators() {
-    console.log('Fetching indicators...');
-    try {
-        const { data, error } = await supabase
-            .from('indicators')
-            .select('*');
-
-        if (error) {
-            console.error('Erreur lors de la récupération des indicateurs:', error);
-            return;
-        }
-
-        console.log('Indicateurs récupérés:', data);
-        if (data && data.length > 0) {
-            metrics = {
-                quality: data.find(d => d.type === 'quality')?.value ?? metrics.quality,
-                capacity: data.find(d => d.type === 'capacity')?.value ?? metrics.capacity,
-                delivery: data.find(d => d.type === 'delivery')?.value ?? metrics.delivery
-            };
-            console.log('Metrics updated:', metrics);
-            updateDisplay();
-        }
-    } catch (err) {
-        console.error('Erreur lors de la récupération des indicateurs:', err);
-    }
-}
-
-async function fetchLevers() {
-    console.log('Fetching levers...');
-    try {
-        const { data, error } = await supabase
-            .from('levers')
-            .select('*');
-
-        if (error) {
-            console.error('Erreur lors de la récupération des leviers:', error);
-            return;
-        }
-
-        console.log('Leviers récupérés:', data);
-        if (data && data.length > 0) {
-            switchStates = data.reduce((acc, lever) => {
-                acc[lever.name] = lever.is_active;
-                return acc;
-            }, {...switchStates});
-            console.log('Switch states updated:', switchStates);
-            updateDisplay();
-        }
-    } catch (err) {
-        console.error('Erreur lors de la récupération des leviers:', err);
-    }
-}
-
-function getProgressColor(current, target, baseline, isQuality = false) {
-    let isTargetReached;
-
-    if (isQuality) {
-        isTargetReached = current <= target;
-    } else {
-        isTargetReached = current >= target;
-    }
-
-    return isTargetReached ? '#6EBE44' : '#005386';
+function calculateValue(key) {
+    const baseValue = INDICATORS[key].baseline;
+    const totalImpact = getTotalImpact(key);
+    const newValue = baseValue + totalImpact;
+    
+    // Ensure the value stays within min and max bounds
+    return Math.min(Math.max(newValue, INDICATORS[key].min), INDICATORS[key].max);
 }
 
 function createProgressBar(key, config) {
-    const value = metrics[key];
-    let percentage;
-    let targetPercentage;
-
-    if (key === 'quality') {
-        percentage = ((value - config.min) / (config.max - config.min)) * 100;
-        targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
-    } else {
-        percentage = ((value - config.min) / (config.max - config.min)) * 100;
-        targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
-    }
+    const value = calculateValue(key);
+    const percentage = ((value - config.min) / (config.max - config.min)) * 100;
+    const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
 
     const isTargetReached = config.isQuality ? value <= config.target : value >= config.target;
     const progressColor = isTargetReached ? '#6EBE44' : '#005386';
-    const targetColor = isTargetReached ? '#6EBE44' : '#ef4444';
 
-    const totalImpact = getTotalImpact(key);
     const improvementPercentage = config.getPercentage(value, config.baseline);
 
     return `
@@ -167,14 +98,14 @@ function createProgressBar(key, config) {
             <div class="indicator-title">${config.title}</div>
             <div class="relative vertical-progress">
                 <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
-                    <span class="text-white font-bold">${value}${config.unit}</span>
+                    <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
                 </div>
                 <div class="target-line" style="bottom: ${100 - targetPercentage}%"></div>
                 <div class="target-label" style="bottom: ${100 - targetPercentage}%">Target: ${config.target}${config.unit}</div>
             </div>
             <div class="base-value">Base Value: ${config.baseline}${config.unit}</div>
             <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
-                Improvement: ${improvementPercentage}%
+                Improvement: ${Math.abs(improvementPercentage)}%
             </div>
         </div>
     `;
@@ -200,20 +131,68 @@ function updateDisplay() {
         leversDiv.innerHTML = Object.keys(OPTIONS_IMPACT).map(lever => {
             const leverData = ACRONYM_DEFINITIONS[lever];
             return `
-                <button class="lever-button" onclick="toggleLever('${lever}')">
+                <button class="lever-button ${switchStates[lever] ? 'active' : ''}" data-lever="${lever}">
                     <div class="text-xl font-semibold">${leverData}</div>
-                    <div class="tooltip">${leverData}</div>
+                    <div class="tooltip">Impact - Quality: ${OPTIONS_IMPACT[lever].quality}%, Capacity: ${OPTIONS_IMPACT[lever].capacity}%, Delivery: ${OPTIONS_IMPACT[lever].delivery}%</div>
                 </button>
             `;
         }).join('');
+
+        // Add event listeners after updating the DOM
+        leversDiv.querySelectorAll('.lever-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const lever = this.dataset.lever;
+                switchStates[lever] = !switchStates[lever];
+                updateDisplay();
+            });
+        });
     }
 }
 
-window.toggleLever = function(lever) {
-    switchStates[lever] = !switchStates[lever];
-    updateDisplay();
-};
+async function fetchIndicators() {
+    try {
+        const { data, error } = await supabase
+            .from('indicators')
+            .select('*');
 
-// Initialisation
-fetchIndicators();
-fetchLevers();
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            metrics = {
+                quality: data.find(d => d.type === 'quality')?.value ?? metrics.quality,
+                capacity: data.find(d => d.type === 'capacity')?.value ?? metrics.capacity,
+                delivery: data.find(d => d.type === 'delivery')?.value ?? metrics.delivery
+            };
+            updateDisplay();
+        }
+    } catch (err) {
+        console.error('Error fetching indicators:', err);
+    }
+}
+
+async function fetchLevers() {
+    try {
+        const { data, error } = await supabase
+            .from('levers')
+            .select('*');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            switchStates = data.reduce((acc, lever) => {
+                acc[lever.name] = lever.is_active;
+                return acc;
+            }, {...switchStates});
+            updateDisplay();
+        }
+    } catch (err) {
+        console.error('Error fetching levers:', err);
+    }
+}
+
+// Initial setup
+document.addEventListener('DOMContentLoaded', () => {
+    updateDisplay(); // Show initial state
+    fetchIndicators(); // Get data from Supabase
+    fetchLevers();
+});
