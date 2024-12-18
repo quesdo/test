@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard QCD - Dassault Systèmes</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --ds-blue: #005386;
@@ -96,6 +95,19 @@
         
         .lever-button {
             position: relative;
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background-color: white;
+            border: 2px solid var(--ds-blue);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+        
+        .lever-button:hover {
+            background-color: var(--ds-blue);
+            color: white;
         }
         
         .lever-button:hover .tooltip {
@@ -157,6 +169,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

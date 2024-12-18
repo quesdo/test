@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k';
 
@@ -72,37 +74,59 @@ let switchStates = {
     line: false
 };
 
-async function fetchIndicators() {
-    let { data, error } = await supabase
-        .from('indicators')
-        .select('*');
+// Initialisation immédiate de l'affichage avec les valeurs par défaut
+updateDisplay();
 
-    if (error) {
-        console.error('Erreur lors de la récupération des indicateurs:', error);
-    } else {
+async function fetchIndicators() {
+    console.log('Fetching indicators...');
+    try {
+        const { data, error } = await supabase
+            .from('indicators')
+            .select('*');
+
+        if (error) {
+            console.error('Erreur lors de la récupération des indicateurs:', error);
+            return;
+        }
+
         console.log('Indicateurs récupérés:', data);
-        metrics = {
-            quality: data.find(d => d.type === 'quality').value,
-            capacity: data.find(d => d.type === 'capacity').value,
-            delivery: data.find(d => d.type === 'delivery').value
-        };
-        updateDisplay();
+        if (data && data.length > 0) {
+            metrics = {
+                quality: data.find(d => d.type === 'quality')?.value ?? metrics.quality,
+                capacity: data.find(d => d.type === 'capacity')?.value ?? metrics.capacity,
+                delivery: data.find(d => d.type === 'delivery')?.value ?? metrics.delivery
+            };
+            console.log('Metrics updated:', metrics);
+            updateDisplay();
+        }
+    } catch (err) {
+        console.error('Erreur lors de la récupération des indicateurs:', err);
     }
 }
 
 async function fetchLevers() {
-    let { data, error } = await supabase
-        .from('levers')
-        .select('*');
+    console.log('Fetching levers...');
+    try {
+        const { data, error } = await supabase
+            .from('levers')
+            .select('*');
 
-    if (error) {
-        console.error('Erreur lors de la récupération des leviers:', error);
-    } else {
-        switchStates = data.reduce((acc, lever) => {
-            acc[lever.name] = lever.is_active;
-            return acc;
-        }, {});
-        updateDisplay();
+        if (error) {
+            console.error('Erreur lors de la récupération des leviers:', error);
+            return;
+        }
+
+        console.log('Leviers récupérés:', data);
+        if (data && data.length > 0) {
+            switchStates = data.reduce((acc, lever) => {
+                acc[lever.name] = lever.is_active;
+                return acc;
+            }, {...switchStates});
+            console.log('Switch states updated:', switchStates);
+            updateDisplay();
+        }
+    } catch (err) {
+        console.error('Erreur lors de la récupération des leviers:', err);
     }
 }
 
@@ -142,15 +166,15 @@ function createProgressBar(key, config) {
         <div class="text-center">
             <div class="indicator-title">${config.title}</div>
             <div class="relative vertical-progress">
-                <div class="vertical-fill" style="height: ${percentage}% ; background-color: ${progressColor};">
-                    <span class="text-white font-bold">${value}</span>
+                <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
+                    <span class="text-white font-bold">${value}${config.unit}</span>
                 </div>
-                <div class="target-line" style="top: ${targetPercentage}%"></div>
-                <div class="target-label" style="top: ${targetPercentage}%">Target</div>
+                <div class="target-line" style="bottom: ${100 - targetPercentage}%"></div>
+                <div class="target-label" style="bottom: ${100 - targetPercentage}%">Target: ${config.target}${config.unit}</div>
             </div>
-            <div class="base-value">Base Value: ${config.baseline}</div>
+            <div class="base-value">Base Value: ${config.baseline}${config.unit}</div>
             <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
-                Improvement: ${improvementPercentage} %
+                Improvement: ${improvementPercentage}%
             </div>
         </div>
     `;
@@ -167,24 +191,29 @@ function getTotalImpact(key) {
 
 function updateDisplay() {
     const indicatorsDiv = document.getElementById("indicators");
-    indicatorsDiv.innerHTML = Object.keys(INDICATORS).map(key => createProgressBar(key, INDICATORS[key])).join('');
+    if (indicatorsDiv) {
+        indicatorsDiv.innerHTML = Object.keys(INDICATORS).map(key => createProgressBar(key, INDICATORS[key])).join('');
+    }
 
     const leversDiv = document.getElementById("levers");
-    leversDiv.innerHTML = Object.keys(OPTIONS_IMPACT).map(lever => {
-        const leverData = ACRONYM_DEFINITIONS[lever];
-        return `
-            <button class="lever-button" onclick="toggleLever('${lever}')">
-                <div class="text-xl font-semibold">${leverData}</div>
-                <div class="tooltip">${leverData}</div>
-            </button>
-        `;
-    }).join('');
+    if (leversDiv) {
+        leversDiv.innerHTML = Object.keys(OPTIONS_IMPACT).map(lever => {
+            const leverData = ACRONYM_DEFINITIONS[lever];
+            return `
+                <button class="lever-button" onclick="toggleLever('${lever}')">
+                    <div class="text-xl font-semibold">${leverData}</div>
+                    <div class="tooltip">${leverData}</div>
+                </button>
+            `;
+        }).join('');
+    }
 }
 
-function toggleLever(lever) {
+window.toggleLever = function(lever) {
     switchStates[lever] = !switchStates[lever];
     updateDisplay();
-}
+};
 
+// Initialisation
 fetchIndicators();
 fetchLevers();
