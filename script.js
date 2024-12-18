@@ -120,6 +120,11 @@ function getTotalImpact(key) {
 
 function handleLeverClick(leverName) {
     switchStates[leverName] = !switchStates[leverName];
+	const { error } = await supabase
+		.from('levers')
+		.update({ is_active: switchStates[leverName] })
+		.eq('name', leverName);
+
     updateDisplay();
 }
 
