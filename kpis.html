@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard QCD - Dassault Systèmes</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.16.0/dist/umd/supabase.min.js"></script>
     <style>
         :root {
             --ds-blue: #005386;
@@ -20,7 +20,7 @@
         .ds-card {
             background: white;
             border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
             padding: 1.5rem;
             margin: 1rem;
             height: calc(100vh - 140px);
@@ -28,15 +28,56 @@
             flex-direction: column;
         }
 
-        .indicator-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 1.5rem;
-            color: #374151;
+        .vertical-progress {
+            width: 140px;
+            height: 500px;
+            position: relative;
+            background: #f3f4f6;
+            border-radius: 12px;
+            margin: 0 auto;
+            margin-bottom: 100px;
+            overflow: visible;
         }
 
-        .lever-button {
-            position: relative;
+        .indicators-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .vertical-fill {
+            position: absolute;
+            width: 100%;
+            border-radius: 12px;
+            transition: height 0.6s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            bottom: 0;
+        }
+
+        .target-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background-color: #ef4444;
+            left: 0;
+            z-index: 2;
+        }
+
+        .target-label {
+            position: absolute;
+            color: #ef4444;
+            font-size: 1rem;
+            font-weight: bold;
+            white-space: nowrap;
+            left: calc(100% + 10px);
+            transform: translateY(-50%);
         }
 
         .tooltip {
@@ -50,70 +91,49 @@
             border-radius: 6px;
             font-size: 0.9rem;
             pointer-events: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .lever-button {
+            position: relative;
         }
 
         .lever-button:hover .tooltip {
             visibility: visible;
         }
+
+        .improvement-badge {
+            background: #f8fafc;
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .improvement-badge.positive {
+            border-color: var(--ds-green);
+            color: var(--ds-green);
+        }
+
+        .improvement-badge.negative {
+            border-color: var(--ds-blue);
+            color: var(--ds-blue);
+        }
+
+        .indicator-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: #374151;
+        }
+
+        .base-value {
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
     </style>
-    <script>
-        const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co'; // Remplace par l'URL de ton projet Supabase
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k'; // Remplace par ta clé API publique
-        const supabase = createClient(supabaseUrl, supabaseKey);
-
-        let switchStates = {};
-
-        async function fetchLevers() {
-            const { data, error } = await supabase.from('levers').select('*');
-            if (error) {
-                console.error('Erreur lors de la récupération des leviers :', error);
-                return;
-            }
-
-            data.forEach(item => {
-                switchStates[item.name] = item.is_active;
-            });
-
-            updateDisplay();
-        }
-
-        async function toggleLever(key) {
-            switchStates[key] = !switchStates[key];
-
-            const { error } = await supabase
-                .from('levers')
-                .update({ is_active: switchStates[key] })
-                .eq('name', key);
-
-            if (error) {
-                console.error('Erreur lors de la mise à jour :', error);
-                return;
-            }
-
-            updateDisplay();
-        }
-
-        function updateDisplay() {
-            const leversContainer = document.getElementById('levers');
-            leversContainer.innerHTML = '';
-            
-            Object.entries(switchStates).forEach(([key, value]) => {
-                const button = document.createElement('div');
-                button.className = 'lever-button flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer';
-                button.innerHTML = `
-                    <div class="text-gray-700 font-medium">${key.toUpperCase()}</div>
-                    <div class="w-12 h-6 rounded-full p-1 ${value ? 'bg-[#005386]' : 'bg-gray-300'}">
-                        <div class="w-4 h-4 bg-white rounded-full transform transition-transform ${value ? 'translate-x-6' : ''}"></div>
-                    </div>
-                `;
-                button.onclick = () => toggleLever(key);
-                leversContainer.appendChild(button);
-            });
-        }
-
-        window.onload = fetchLevers;
-    </script>
 </head>
 <body>
     <div class="min-h-screen bg-gray-50">
@@ -123,11 +143,233 @@
         </div>
 
         <div class="container mx-auto p-4">
-            <div class="ds-card">
-                <h2 class="text-2xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
-                <div class="space-y-4" id="levers"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="ds-card lg:col-span-3">
+                    <h2 class="text-2xl font-bold mb-4 text-[#005386]">QCD Performance Indicators</h2>
+                    <div class="indicators-container" id="indicators"></div>
+                </div>
+
+                <div class="ds-card lg:col-span-1">
+                    <h2 class="text-2xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
+                    <div class="space-y-2 overflow-auto flex-grow" id="levers"></div>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // Initialisation de Supabase
+        const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co'; // Remplace par ton URL Supabase
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k'; // Remplace par ta clé publique Supabase
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Impact des leviers
+        const OPTIONS_IMPACT = {
+            amr: { quality: -0.6, capacity: +5.3, delivery: +0.7 },
+            ar: { quality: -0.6, capacity: +6.3, delivery: +0.7 },
+            kitting: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
+            assembly: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
+            mes: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
+            pick: { quality: -0.6, capacity: +3.6, delivery: +0.7 },
+            line: { quality: -0.5, capacity: +0, delivery: +0.8 }
+        };
+
+        const ACRONYM_DEFINITIONS = {
+            amr: "Autonomous Mobile Robot",
+            ar: "Augmented Reality",
+            kitting: "Kit Preparation Process",
+            assembly: "Assembly Line Optimization",
+            mes: "Manufacturing Execution System",
+            pick: "Pick-to-Light System",
+            line: "Production Line Balancing"
+        };
+
+        const INDICATORS = {
+            quality: { 
+                title: "Quality", 
+                target: 0.1,
+                baseline: 4.0,
+                min: 0.1,
+                max: 4.0,
+                isQuality: true,
+                unit: " scrap/day",
+                getPercentage: (value, baseline) => ((baseline - value) / baseline * 100).toFixed(1)
+            },
+            capacity: { 
+                title: "Capacity", 
+                target: 60,
+                baseline: 37,
+                min: 0,
+                max: 70,
+                isQuality: false,
+                unit: "/h",
+                getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
+            },
+            delivery: { 
+                title: "Delivery", 
+                target: 98,
+                baseline: 93,
+                min: 0,
+                max: 100,
+                isQuality: false,
+                unit: "%",
+                getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
+            }
+        };
+
+        let metrics = {
+            quality: 4.0,
+            capacity: 37,
+            delivery: 93
+        };
+
+        let switchStates = {
+            amr: false,
+            ar: false,
+            kitting: false,
+            assembly: false,
+            mes: false,
+            pick: false,
+            line: false
+        };
+
+        // Fonction pour calculer les métriques
+        function calculateMetrics() {
+            const impacts = Object.entries(switchStates).reduce((acc, [key, isEnabled]) => {
+                if (isEnabled) {
+                    Object.keys(OPTIONS_IMPACT[key]).forEach(metric => {
+                        acc[metric] = (acc[metric] || 0) + OPTIONS_IMPACT[key][metric];
+                    });
+                }
+                return acc;
+            }, {});
+
+            metrics = {
+                quality: Math.max(0.1, 4.0 + (impacts.quality || 0)),
+                capacity: Math.min(70, 37 + (impacts.capacity || 0)),
+                delivery: Math.min(98, 93 + (impacts.delivery || 0))
+            };
+
+            updateDisplay();
+        }
+
+        // Récupérer l'impact total d'un levier
+        function getTotalImpact(key) {
+            return Object.entries(switchStates)
+                .filter(([_, isActive]) => isActive)
+                .reduce((total, [option, _]) => total + OPTIONS_IMPACT[option][key], 0);
+        }
+
+        // Créer une barre de progression pour chaque indicateur
+        function createProgressBar(key, config) {
+            const value = metrics[key];
+            let percentage;
+            let targetPercentage;
+            
+            if (key === 'quality') {
+                percentage = ((value - config.min) / (config.max - config.min)) * 100;
+                targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
+            } else {
+                percentage = ((value - config.min) / (config.max - config.min)) * 100;
+                targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
+            }
+            
+            const isTargetReached = config.isQuality ? value <= config.target : value >= config.target;
+
+            return `
+                <div class="relative">
+                    <div class="vertical-progress">
+                        <div class="vertical-fill" style="height: ${percentage}%; background-color: ${isTargetReached ? '#6EBE44' : '#F44336'};">
+                            <span class="text-center" style="margin-top: 30%;">${value} ${config.unit}</span>
+                        </div>
+                        <div class="target-line" style="top: ${targetPercentage}%"></div>
+                        <span class="target-label">Target: ${config.target} ${config.unit}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Charger les données de Supabase
+        async function getIndicatorsFromSupabase() {
+            const { data, error } = await supabase
+                .from('indicators') // Remplace par le nom de ta table
+                .select('*');
+
+            if (error) {
+                console.error('Erreur de récupération des données:', error);
+            } else {
+                console.log('Données récupérées:', data);
+                // Tu peux mettre à jour ton interface avec ces données
+                metrics.quality = data[0]?.quality || metrics.quality;
+                metrics.capacity = data[0]?.capacity || metrics.capacity;
+                metrics.delivery = data[0]?.delivery || metrics.delivery;
+                
+                updateDisplay(); // Met à jour l'affichage avec les nouvelles données
+            }
+        }
+
+        // Fonction pour mettre à jour l'affichage
+        function updateDisplay() {
+            const indicatorsElement = document.getElementById("indicators");
+            const leversElement = document.getElementById("levers");
+
+            // Met à jour les indicateurs
+            indicatorsElement.innerHTML = Object.entries(INDICATORS)
+                .map(([key, config]) => {
+                    return `
+                        <div class="w-full lg:w-1/3">
+                            <h3 class="indicator-title">${config.title}</h3>
+                            ${createProgressBar(key, config)}
+                            <p class="base-value">Current value: ${metrics[key]} ${config.unit}</p>
+                            <p class="text-gray-500">Target: ${config.target} ${config.unit}</p>
+                            <p class="text-gray-500">Improvement: ${config.getPercentage(metrics[key], config.baseline)}%</p>
+                        </div>
+                    `;
+                }).join("");
+
+            // Met à jour les leviers
+            leversElement.innerHTML = Object.entries(switchStates)
+                .map(([lever, isActive]) => {
+                    const badgeClass = isActive ? 'positive' : 'negative';
+                    const badgeText = isActive ? `Active (${ACRONYM_DEFINITIONS[lever]})` : 'Inactive';
+                    return `
+                        <button class="lever-button w-full" onclick="toggleLever('${lever}')">
+                            <div class="improvement-badge ${badgeClass}">
+                                ${lever.toUpperCase()} - ${badgeText}
+                            </div>
+                            <div class="tooltip">${ACRONYM_DEFINITIONS[lever]}</div>
+                        </button>
+                    `;
+                }).join("");
+        }
+
+        // Fonction pour activer/désactiver un levier
+        function toggleLever(leverName) {
+            switchStates[leverName] = !switchStates[leverName];
+            calculateMetrics();
+            addLeverDataToSupabase(leverName, switchStates[leverName]); // Met à jour Supabase
+        }
+
+        // Ajouter ou mettre à jour des leviers dans Supabase
+        async function addLeverDataToSupabase(leverName, isActive) {
+            const { data, error } = await supabase
+                .from('levers') // Remplace par le nom de ta table
+                .upsert([
+                    { lever_name: leverName, is_active: isActive }
+                ]);
+
+            if (error) {
+                console.error('Erreur d\'ajout des données:', error);
+            } else {
+                console.log('Données ajoutées avec succès:', data);
+            }
+        }
+
+        // Charger les données de Supabase au démarrage
+        document.addEventListener('DOMContentLoaded', () => {
+            getIndicatorsFromSupabase(); // Charge les données
+            updateDisplay(); // Met à jour l'affichage avec les données actuelles
+        });
+    </script>
 </body>
 </html>
