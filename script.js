@@ -97,81 +97,36 @@ let switchStates = {
 
 let channel = null;
 
+// Fonction VR pour basculer la visibilité
+function toggleVisibility(actorName, visible) {
+    window.parent.postMessage(JSON.stringify({ 
+        action: "toggleVisibility", 
+        actor: actorName, 
+        visible: visible 
+    }), "*");
+}
+
+// Fonction pour vérifier si tous les leviers sont actifs sauf "line"
+function checkAllLeversExceptLine() {
+    return Object.entries(switchStates).every(([key, value]) => {
+        if (key === 'line') return true; // Ignorer le levier "line"
+        return value === true; // Vérifier que tous les autres sont actifs
+    });
+}
+
+// Fonction pour gérer la visibilité de ToBeStations
+function updateToBeStationsVisibility() {
+    const shouldShow = checkAllLeversExceptLine();
+    toggleVisibility("ToBeStations", shouldShow);
+}
+
 function handleRealtimeUpdate(payload) {
     console.log('Changement reçu:', payload);
     if (payload.new && payload.new.name) {
         console.log(`Mise à jour du levier ${payload.new.name} à ${payload.new.is_active}`);
         switchStates[payload.new.name] = payload.new.is_active;
         updateDisplay();
-    }
-}
-
-function calculateValue(key) {
-    const baseValue = INDICATORS[key].baseline;
-    const totalImpact = getTotalImpact(key);
-    const newValue = baseValue + totalImpact;
-    return Math.min(Math.max(newValue, INDICATORS[key].min), INDICATORS[key].max);
-}
-
-function createProgressBar(key, config) {
-    const value = calculateValue(key);
-    
-    let percentage;
-    if (config.isQuality) {
-        percentage = ((value - config.min) / (config.max - config.min)) * 100;
-    } else {
-        percentage = ((value - config.min) / (config.max - config.min)) * 100;
-    }
-
-    const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
-
-    const isTargetReached = config.isQuality ? 
-        value <= config.target : 
-        value >= config.target;
-
-    const progressColor = isTargetReached ? '#6EBE44' : '#005386';
-    const improvementPercentage = config.getPercentage(value, config.baseline);
-
-    return `
-        <div class="text-center">
-            <div class="indicator-title">${config.title}</div>
-            <div class="relative vertical-progress">
-                <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
-                    <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
-                </div>
-                <div class="target-line" style="bottom: ${targetPercentage}%"></div>
-            </div>
-            <div class="target-value">Target: ${config.target}${config.unit}</div>
-            <div class="initial-value">Initial Value: ${config.baseline}${config.unit}</div>
-            <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
-                Improvement: ${Math.abs(improvementPercentage)}%
-            </div>
-        </div>
-    `;
-}
-
-function getTotalImpact(key) {
-    return Object.keys(switchStates).reduce((acc, lever) => {
-        if (switchStates[lever]) {
-            acc += OPTIONS_IMPACT[lever][key];
-        }
-        return acc;
-    }, 0);
-}
-
-async function handleLeverClick(leverName) {
-    const newState = !switchStates[leverName];
-    
-    try {
-        const { error } = await supabaseClient
-            .from('levers')
-            .update({ is_active: newState })
-            .eq('name', leverName);
-
-        if (error) throw error;
-        
-        switchStates[leverName] = newState;
-        updateDisplay();
+        updateToBeStationsVisibility();
         
     } catch (err) {
         console.error('Error updating lever:', err);
@@ -256,6 +211,7 @@ async function fetchLevers() {
                 return acc;
             }, {...switchStates});
             updateDisplay();
+            updateToBeStationsVisibility();
         }
     } catch (err) {
         console.error('Error fetching levers:', err);
@@ -269,3 +225,73 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchLevers();
     setupRealtimeSubscription();
 });
+        updateToBeStationsVisibility();
+    }
+}
+
+function calculateValue(key) {
+    const baseValue = INDICATORS[key].baseline;
+    const totalImpact = getTotalImpact(key);
+    const newValue = baseValue + totalImpact;
+    return Math.min(Math.max(newValue, INDICATORS[key].min), INDICATORS[key].max);
+}
+
+function createProgressBar(key, config) {
+    const value = calculateValue(key);
+    
+    let percentage;
+    if (config.isQuality) {
+        percentage = ((value - config.min) / (config.max - config.min)) * 100;
+    } else {
+        percentage = ((value - config.min) / (config.max - config.min)) * 100;
+    }
+
+    const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
+
+    const isTargetReached = config.isQuality ? 
+        value <= config.target : 
+        value >= config.target;
+
+    const progressColor = isTargetReached ? '#6EBE44' : '#005386';
+    const improvementPercentage = config.getPercentage(value, config.baseline);
+
+    return `
+        <div class="text-center">
+            <div class="indicator-title">${config.title}</div>
+            <div class="relative vertical-progress">
+                <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
+                    <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
+                </div>
+                <div class="target-line" style="bottom: ${targetPercentage}%"></div>
+            </div>
+            <div class="target-value">Target: ${config.target}${config.unit}</div>
+            <div class="initial-value">Initial Value: ${config.baseline}${config.unit}</div>
+            <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
+                Improvement: ${Math.abs(improvementPercentage)}%
+            </div>
+        </div>
+    `;
+}
+
+function getTotalImpact(key) {
+    return Object.keys(switchStates).reduce((acc, lever) => {
+        if (switchStates[lever]) {
+            acc += OPTIONS_IMPACT[lever][key];
+        }
+        return acc;
+    }, 0);
+}
+
+async function handleLeverClick(leverName) {
+    const newState = !switchStates[leverName];
+    
+    try {
+        const { error } = await supabaseClient
+            .from('levers')
+            .update({ is_active: newState })
+            .eq('name', leverName);
+
+        if (error) throw error;
+        
+        switchStates[leverName] = newState;
+        updateDisplay();
