@@ -96,4 +96,81 @@ function createProgressBar(key, config) {
                 <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
                     <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
                 </div>
-                <div class="target-line
+                <div class="target-line" style="bottom: ${targetPercentage}%"></div>
+            </div>
+            <div class="target-value">Target: ${config.target}${config.unit}</div>
+            <div class="initial-value">Initial Value: ${config.baseline}${config.unit}</div>
+            <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
+                Improvement: ${Math.abs(improvementPercentage)}%
+            </div>
+        </div>
+    `;
+}
+
+function getTotalImpact(key) {
+    return Object.keys(switchStates).reduce((acc, lever) => {
+        if (switchStates[lever]) {
+            acc += OPTIONS_IMPACT[lever][key];
+        }
+        return acc;
+    }, 0);
+}
+
+function updateDisplay() {
+    const indicatorsDiv = document.getElementById("indicators");
+    if (indicatorsDiv) {
+        indicatorsDiv.innerHTML = Object.keys(INDICATORS)
+            .map(key => createProgressBar(key, INDICATORS[key]))
+            .join('');
+    }
+}
+
+function setupRealtimeSubscription() {
+    if (channel) {
+        channel.unsubscribe();
+    }
+
+    channel = supabaseClient
+        .channel('levers-channel')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'levers'
+            },
+            handleRealtimeUpdate
+        )
+        .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR') {
+                setTimeout(setupRealtimeSubscription, 5000);
+            }
+        });
+}
+
+async function fetchLevers() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('levers')
+            .select('*');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            switchStates = data.reduce((acc, lever) => {
+                acc[lever.name] = lever.is_active;
+                return acc;
+            }, {...switchStates});
+            updateDisplay();
+        }
+    } catch (err) {
+        console.error('Error fetching levers:', err);
+    }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', () => {
+    updateDisplay();
+    fetchLevers();
+    setupRealtimeSubscription();
+});
