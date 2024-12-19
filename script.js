@@ -1,67 +1,88 @@
 const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k';
 
-// Création du client Supabase
 const { createClient } = supabase;
 const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-const OPTIONS_IMPACT = {
-    amr: { quality: -0.6, capacity: +5.3, delivery: +0.7 },
-    ar: { quality: -0.6, capacity: +6.3, delivery: +0.7 },
-    kitting: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
-    assembly: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
-    mes: { quality: -0.6, capacity: +3.3, delivery: +0.7 },
-    pick: { quality: -0.6, capacity: +3.6, delivery: +0.7 },
-    line: { quality: -0.5, capacity: +0, delivery: +0.8 }
-};
-
 const ACRONYM_DEFINITIONS = {
     amr: "Autonomous Mobile Robot",
-    ar: "Augmented Reality",
+    ar: "AR: Quality Assistance",
     kitting: "Kit Preparation Process",
-    assembly: "Assembly Line Optimization",
-    mes: "Manufacturing Execution System",
-    pick: "Pick-to-Light System",
-    line: "Production Line Balancing"
+    assembly: "AR: Assembly Assistance",
+    mes: "Manufacturing Operation Management",
+    pick: "Automatisation",
+    line: "Layout"
+};
+
+const OPTIONS_IMPACT = {
+    amr: { 
+        quality: 0, 
+        capacity: 0, 
+        delivery: +4.0
+    },
+    ar: { 
+        quality: -2.25, 
+        capacity: 0, 
+        delivery: 0 
+    },
+    kitting: { 
+        quality: 0, 
+        capacity: +1.7, 
+        delivery: 0 
+    },
+    assembly: { 
+        quality: -2.25, 
+        capacity: 0, 
+        delivery: 0 
+    },
+    mes: { 
+        quality: 0, 
+        capacity: +1.7, 
+        delivery: 0 
+    },
+    pick: { 
+        quality: 0, 
+        capacity: +1.6, 
+        delivery: 0 
+    },
+    line: { 
+        quality: 0, 
+        capacity: 0, 
+        delivery: +4.0
+    }
 };
 
 const INDICATORS = {
     quality: { 
-        title: "Quality", 
-        target: 0.1,
-        baseline: 4.0,
-        min: 0.1,
-        max: 4.0,
+        title: "Quality (Cost of non quality)", 
+        target: 4.5,
+        baseline: 9.0,
+        min: 0,
+        max: 10.0,
         isQuality: true,
-        unit: " scrap/day",
+        unit: "%",
         getPercentage: (value, baseline) => ((baseline - value) / baseline * 100).toFixed(1)
     },
     capacity: { 
-        title: "Capacity", 
-        target: 60,
-        baseline: 37,
+        title: "Productivity (Parts/Person/Hour)", 
+        target: 12,
+        baseline: 7,
         min: 0,
-        max: 70,
+        max: 15,
         isQuality: false,
-        unit: "/h",
+        unit: " pcs/pers/h",
         getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
     },
     delivery: { 
-        title: "Delivery", 
-        target: 98,
-        baseline: 93,
+        title: "Delivery (Planning Adherence)", 
+        target: 95,
+        baseline: 87,
         min: 0,
         max: 100,
         isQuality: false,
         unit: "%",
         getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
     }
-};
-
-let metrics = {
-    quality: 4.0,
-    capacity: 37,
-    delivery: 93
 };
 
 let switchStates = {
@@ -94,12 +115,21 @@ function calculateValue(key) {
 
 function createProgressBar(key, config) {
     const value = calculateValue(key);
-    const percentage = ((value - config.min) / (config.max - config.min)) * 100;
+    
+    let percentage;
+    if (config.isQuality) {
+        percentage = ((value - config.min) / (config.max - config.min)) * 100;
+    } else {
+        percentage = ((value - config.min) / (config.max - config.min)) * 100;
+    }
+
     const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
 
-    const isTargetReached = config.isQuality ? value <= config.target : value >= config.target;
-    const progressColor = isTargetReached ? '#6EBE44' : '#005386';
+    const isTargetReached = config.isQuality ? 
+        value <= config.target : 
+        value >= config.target;
 
+    const progressColor = isTargetReached ? '#6EBE44' : '#005386';
     const improvementPercentage = config.getPercentage(value, config.baseline);
 
     return `
@@ -109,8 +139,8 @@ function createProgressBar(key, config) {
                 <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
                     <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
                 </div>
-                <div class="target-line" style="bottom: ${100 - targetPercentage}%"></div>
-                <div class="target-label" style="bottom: ${100 - targetPercentage}%">Target: ${config.target}${config.unit}</div>
+                <div class="target-line" style="bottom: ${targetPercentage}%"></div>
+                <div class="target-label" style="bottom: ${targetPercentage}%">Target: ${config.target}${config.unit}</div>
             </div>
             <div class="base-value">Base Value: ${config.baseline}${config.unit}</div>
             <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
@@ -140,13 +170,11 @@ async function handleLeverClick(leverName) {
 
         if (error) throw error;
         
-        // Mise à jour locale immédiate
         switchStates[leverName] = newState;
         updateDisplay();
         
     } catch (err) {
         console.error('Error updating lever:', err);
-        // En cas d'erreur, revenir à l'état précédent
         switchStates[leverName] = !newState;
         updateDisplay();
     }
@@ -159,9 +187,6 @@ function createLeverButton(lever) {
     container.innerHTML = `
         <button class="lever-button ${switchStates[lever] ? 'active' : ''}" data-lever="${lever}">
             <div class="text-xl font-semibold">${leverData}</div>
-            <div class="tooltip">Impact - Quality: ${OPTIONS_IMPACT[lever].quality}%, 
-                Capacity: ${OPTIONS_IMPACT[lever].capacity}%, 
-                Delivery: ${OPTIONS_IMPACT[lever].delivery}%</div>
         </button>
     `;
     
@@ -212,31 +237,9 @@ function setupRealtimeSubscription() {
             }
             if (status === 'CHANNEL_ERROR') {
                 console.error('Erreur de connexion au canal');
-                // Tentative de reconnexion après 5 secondes
                 setTimeout(setupRealtimeSubscription, 5000);
             }
         });
-}
-
-async function fetchIndicators() {
-    try {
-        const { data, error } = await supabaseClient
-            .from('indicators')
-            .select('*');
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-            metrics = {
-                quality: data.find(d => d.type === 'quality')?.value ?? metrics.quality,
-                capacity: data.find(d => d.type === 'capacity')?.value ?? metrics.capacity,
-                delivery: data.find(d => d.type === 'delivery')?.value ?? metrics.delivery
-            };
-            updateDisplay();
-        }
-    } catch (err) {
-        console.error('Error fetching indicators:', err);
-    }
 }
 
 async function fetchLevers() {
@@ -263,7 +266,6 @@ async function fetchLevers() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Initialisation de l\'application...');
     updateDisplay();
-    fetchIndicators();
     fetchLevers();
     setupRealtimeSubscription();
 });
