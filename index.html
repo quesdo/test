@@ -1,10 +1,11 @@
+<!-- indicators.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://kikivfglslrobwttvlvn.supabase.co wss://kikivfglslrobwttvlvn.supabase.co; style-src 'self' 'unsafe-inline';">
-    <title>Dashboard QCD - Dassault Systèmes</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://kikivfglslrobwttvlvn.supabase.co wss://kikivfglslrobwttvlvn.supabase.co; style-src 'self' 'unsafe-inline';">
+    <title>Dashboard QCD - Indicateurs</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -47,21 +48,11 @@
         }
         
         .indicators-panel {
-            flex: 3;
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: auto;
-        }
-        
-        .levers-panel {
             flex: 1;
             background: white;
             border-radius: 8px;
             padding: 1.5rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            min-width: 400px;
             overflow: auto;
         }
         
@@ -105,24 +96,6 @@
             background-color: #ef4444;
             left: 0;
             z-index: 2;
-        }
-        
-        .lever-button {
-            position: relative;
-            width: 100%;
-            padding: 1.2rem;
-            margin-bottom: 0.8rem;
-            background-color: white;
-            border: 2px solid var(--ds-blue);
-            border-radius: 0.5rem;
-            text-align: left;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        
-        .lever-button.active {
-            background-color: var(--ds-blue);
-            color: white;
         }
         
         .improvement-badge {
@@ -170,12 +143,6 @@
             text-align: center;
             color: #4b5563;
         }
-        
-        .lever-text {
-            font-size: 1.5rem;
-            line-height: 1.2;
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
@@ -191,14 +158,9 @@
             <h2 class="text-3xl font-bold mb-4 text-[#005386]">QCD Performance Indicators</h2>
             <div class="indicators-container" id="indicators"></div>
         </div>
-
-        <div class="levers-panel">
-            <h2 class="text-3xl font-bold mb-4 text-[#005386]">Improvement Levers</h2>
-            <div class="space-y-3" style="height: calc(100% - 60px)" id="levers"></div>
-        </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
+    <script type="module" src="indicators.js"></script>
 </body>
 </html>
