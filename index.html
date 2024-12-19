@@ -1,12 +1,10 @@
-<!-- indicators.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://kikivfglslrobwttvlvn.supabase.co wss://kikivfglslrobwttvlvn.supabase.co; style-src 'self' 'unsafe-inline';">
     <title>Dashboard QCD - Indicateurs</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --ds-blue: #005386;
@@ -19,6 +17,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background: #f0f2f5;
         }
         
         .header {
@@ -29,31 +28,45 @@
             height: 80px;
         }
         
-        .logo {
-            height: 60px;
-            margin-right: 20px;
-        }
-        
         .header-text {
             color: white;
+            font-size: 1.2rem;
         }
         
         .main-content {
             flex: 1;
-            display: flex;
-            padding: 1rem;
-            gap: 1rem;
-            background: #f0f2f5;
-            height: calc(100vh - 80px);
+            padding: 2rem;
         }
         
         .indicators-panel {
-            flex: 1;
             background: white;
             border-radius: 8px;
-            padding: 1.5rem;
+            padding: 2rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: auto;
+            margin: 0 auto;
+            max-width: 1200px;
+        }
+        
+        .panel-title {
+            color: var(--ds-blue);
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+        
+        .indicators-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .indicator-card {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            text-align: center;
         }
         
         .vertical-progress {
@@ -62,21 +75,12 @@
             position: relative;
             background: #f3f4f6;
             border-radius: 12px;
-            margin: 0 auto;
-            overflow: visible;
-        }
-        
-        .indicators-container {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            height: calc(100% - 60px);
-            padding: 1rem;
-            gap: 2rem;
+            margin: 1rem auto;
         }
         
         .vertical-fill {
             position: absolute;
+            bottom: 0;
             width: 100%;
             border-radius: 12px;
             transition: height 0.6s ease;
@@ -86,7 +90,6 @@
             color: white;
             font-weight: bold;
             font-size: 1.4rem;
-            bottom: 0;
         }
         
         .target-line {
@@ -98,16 +101,35 @@
             z-index: 2;
         }
         
+        .indicator-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            min-height: 3rem;
+        }
+        
+        .target-value {
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .initial-value {
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+            color: #4b5563;
+        }
+        
         .improvement-badge {
             background: #f8fafc;
             border: 2px solid;
             border-radius: 8px;
             padding: 8px 16px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
             margin-top: 1rem;
-            text-align: center;
-            transition: all 0.3s ease;
+            display: inline-block;
         }
         
         .improvement-badge.positive {
@@ -119,48 +141,212 @@
             border-color: var(--ds-blue);
             color: var(--ds-blue);
         }
-        
-        .indicator-title {
-            font-size: 1.8rem;
-            font-weight: bold;
-            margin-bottom: 1.5rem;
-            color: #374151;
-            text-align: center;
-            min-height: 4rem;
-        }
-        
-        .target-value {
-            font-size: 1.3rem;
-            margin-top: 1rem;
-            text-align: center;
-            color: #ef4444;
-            font-weight: bold;
-        }
-        
-        .initial-value {
-            font-size: 1.3rem;
-            margin-top: 0.5rem;
-            text-align: center;
-            color: #4b5563;
-        }
     </style>
 </head>
 <body>
     <header class="header">
-        <img src="logo.png" alt="Dassault Systèmes" class="logo">
         <div class="header-text">
-            <p class="text-lg">Quality, Capacity & Delivery Monitoring</p>
+            <p>Quality, Capacity & Delivery Monitoring</p>
         </div>
     </header>
 
     <main class="main-content">
         <div class="indicators-panel">
-            <h2 class="text-3xl font-bold mb-4 text-[#005386]">QCD Performance Indicators</h2>
-            <div class="indicators-container" id="indicators"></div>
+            <h2 class="panel-title">QCD Performance Indicators</h2>
+            <div id="indicators" class="indicators-container"></div>
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script type="module" src="indicators.js"></script>
+    <script>
+        const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        const OPTIONS_IMPACT = {
+            amr: { quality: 0, capacity: 0, delivery: +4.0 },
+            ar: { quality: -2.25, capacity: 0, delivery: 0 },
+            kitting: { quality: 0, capacity: +1.7, delivery: 0 },
+            assembly: { quality: -2.25, capacity: 0, delivery: 0 },
+            mes: { quality: 0, capacity: +1.7, delivery: 0 },
+            pick: { quality: 0, capacity: +1.6, delivery: 0 },
+            line: { quality: 0, capacity: 0, delivery: +4.0 }
+        };
+
+        const INDICATORS = {
+            quality: { 
+                title: "Quality (Cost of non quality)", 
+                target: 4.5,
+                baseline: 9.0,
+                min: 0,
+                max: 10.0,
+                isQuality: true,
+                unit: "%",
+                getPercentage: (value, baseline) => ((baseline - value) / baseline * 100).toFixed(1)
+            },
+            capacity: { 
+                title: "Productivity (Parts/Person/Hour)", 
+                target: 12,
+                baseline: 7,
+                min: 0,
+                max: 15,
+                isQuality: false,
+                unit: " pcs/pers/h",
+                getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
+            },
+            delivery: { 
+                title: "Delivery (Planning Adherence)", 
+                target: 95,
+                baseline: 87,
+                min: 0,
+                max: 100,
+                isQuality: false,
+                unit: "%",
+                getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
+            }
+        };
+
+        let switchStates = {
+            amr: false,
+            ar: false,
+            kitting: false,
+            assembly: false,
+            mes: false,
+            pick: false,
+            line: false
+        };
+
+        let channel = null;
+
+        function getTotalImpact(key) {
+            console.log('Calculating impact for:', key);
+            console.log('Current switch states:', switchStates);
+            
+            const impact = Object.keys(switchStates).reduce((acc, lever) => {
+                if (switchStates[lever]) {
+                    acc += OPTIONS_IMPACT[lever][key];
+                }
+                return acc;
+            }, 0);
+            
+            console.log('Total impact:', impact);
+            return impact;
+        }
+
+        function calculateValue(key) {
+            const baseValue = INDICATORS[key].baseline;
+            const totalImpact = getTotalImpact(key);
+            const newValue = baseValue + totalImpact;
+            console.log(`Calculating ${key}:`, { baseValue, totalImpact, newValue });
+            return Math.min(Math.max(newValue, INDICATORS[key].min), INDICATORS[key].max);
+        }
+
+        function createProgressBar(key, config) {
+            const value = calculateValue(key);
+            
+            let percentage;
+            if (config.isQuality) {
+                percentage = ((value - config.min) / (config.max - config.min)) * 100;
+            } else {
+                percentage = ((value - config.min) / (config.max - config.min)) * 100;
+            }
+
+            const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
+            const isTargetReached = config.isQuality ? value <= config.target : value >= config.target;
+            const progressColor = isTargetReached ? '#6EBE44' : '#005386';
+            const improvementPercentage = config.getPercentage(value, config.baseline);
+
+            return `
+                <div class="indicator-card">
+                    <div class="indicator-title">${config.title}</div>
+                    <div class="vertical-progress">
+                        <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
+                            <span>${value.toFixed(1)}${config.unit}</span>
+                        </div>
+                        <div class="target-line" style="bottom: ${targetPercentage}%"></div>
+                    </div>
+                    <div class="target-value">Target: ${config.target}${config.unit}</div>
+                    <div class="initial-value">Initial Value: ${config.baseline}${config.unit}</div>
+                    <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
+                        Improvement: ${Math.abs(improvementPercentage)}%
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleRealtimeUpdate(payload) {
+            console.log('Realtime update received:', payload);
+            if (payload.new && payload.new.name) {
+                switchStates[payload.new.name] = payload.new.is_active;
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            console.log('Updating display with states:', switchStates);
+            const indicatorsDiv = document.getElementById("indicators");
+            if (indicatorsDiv) {
+                indicatorsDiv.innerHTML = Object.keys(INDICATORS)
+                    .map(key => createProgressBar(key, INDICATORS[key]))
+                    .join('');
+            }
+        }
+
+        function setupRealtimeSubscription() {
+            if (channel) {
+                channel.unsubscribe();
+            }
+
+            channel = supabaseClient
+                .channel('levers-channel')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'levers'
+                    },
+                    handleRealtimeUpdate
+                )
+                .subscribe((status) => {
+                    console.log('Subscription status:', status);
+                });
+        }
+
+        async function fetchLevers() {
+            console.log('Fetching levers from Supabase...');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('levers')
+                    .select('*');
+
+                if (error) {
+                    console.error('Error fetching levers:', error);
+                    throw error;
+                }
+
+                console.log('Received lever data:', data);
+                if (data && data.length > 0) {
+                    switchStates = data.reduce((acc, lever) => {
+                        acc[lever.name] = lever.is_active;
+                        return acc;
+                    }, {...switchStates});
+                    console.log('Updated switch states:', switchStates);
+                    updateDisplay();
+                }
+            } catch (err) {
+                console.error('Error in fetchLevers:', err);
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Application initializing...');
+            updateDisplay();
+            fetchLevers();
+            setupRealtimeSubscription();
+        });
+    </script>
 </body>
 </html>
