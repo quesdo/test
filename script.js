@@ -140,9 +140,9 @@ function createProgressBar(key, config) {
                     <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
                 </div>
                 <div class="target-line" style="bottom: ${targetPercentage}%"></div>
-                <div class="target-label" style="bottom: ${targetPercentage}%">Target: ${config.target}${config.unit}</div>
             </div>
-            <div class="base-value">Base Value: ${config.baseline}${config.unit}</div>
+            <div class="target-value">Target: ${config.target}${config.unit}</div>
+            <div class="initial-value">Initial Value: ${config.baseline}${config.unit}</div>
             <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
                 Improvement: ${Math.abs(improvementPercentage)}%
             </div>
@@ -186,7 +186,7 @@ function createLeverButton(lever) {
     
     container.innerHTML = `
         <button class="lever-button ${switchStates[lever] ? 'active' : ''}" data-lever="${lever}">
-            <div class="text-xl font-semibold">${leverData}</div>
+            <div class="lever-text">${leverData}</div>
         </button>
     `;
     
