@@ -1,4 +1,3 @@
-// indicators.js
 const supabaseUrl = 'https://kikivfglslrobwttvlvn.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa2l2Zmdsc2xyb2J3dHR2bHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MTIwNDQsImV4cCI6MjA1MDA4ODA0NH0.Njo06GXSyZHjpjRwPJ2zpElJ88VYgqN2YYDfTJnBQ6k';
 
@@ -9,7 +8,7 @@ const OPTIONS_IMPACT = {
     amr: { quality: 0, capacity: 0, delivery: +4.0 },
     ar: { quality: -2.25, capacity: 0, delivery: 0 },
     kitting: { quality: 0, capacity: +1.7, delivery: 0 },
-    assembly: { quality: -2.25, capacity: 0, delivery: 0 },
+    assembly: { quality: -2.75, capacity: 0, delivery: 0 },
     mes: { quality: 0, capacity: +1.7, delivery: 0 },
     pick: { quality: 0, capacity: +1.6, delivery: 0 },
     line: { quality: 0, capacity: 0, delivery: +4.0 }
@@ -18,13 +17,13 @@ const OPTIONS_IMPACT = {
 const INDICATORS = {
     quality: { 
         title: "Quality (Cost of non quality)", 
-        target: 4.5,
+        target: 4.0,
         baseline: 9.0,
         min: 0,
         max: 10.0,
         isQuality: true,
         unit: "%",
-        getPercentage: (value, baseline) => ((baseline - value) / baseline * 100).toFixed(1)
+        getImprovement: (value, baseline) => (baseline - value).toFixed(1)
     },
     capacity: { 
         title: "Productivity (Parts/Person/Hour)", 
@@ -34,7 +33,7 @@ const INDICATORS = {
         max: 15,
         isQuality: false,
         unit: " pcs/pers/h",
-        getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
+        getImprovement: (value, baseline) => (value - baseline).toFixed(1)
     },
     delivery: { 
         title: "Delivery (Planning Adherence)", 
@@ -44,7 +43,7 @@ const INDICATORS = {
         max: 100,
         isQuality: false,
         unit: "%",
-        getPercentage: (value, baseline) => ((value - baseline) / baseline * 100).toFixed(1)
+        getImprovement: (value, baseline) => (value - baseline).toFixed(1)
     }
 };
 
@@ -60,11 +59,13 @@ let switchStates = {
 
 let channel = null;
 
-function handleRealtimeUpdate(payload) {
-    if (payload.new && payload.new.name) {
-        switchStates[payload.new.name] = payload.new.is_active;
-        updateDisplay();
-    }
+function getTotalImpact(key) {
+    return Object.keys(switchStates).reduce((acc, lever) => {
+        if (switchStates[lever]) {
+            acc += OPTIONS_IMPACT[lever][key];
+        }
+        return acc;
+    }, 0);
 }
 
 function calculateValue(key) {
@@ -87,33 +88,32 @@ function createProgressBar(key, config) {
     const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
     const isTargetReached = config.isQuality ? value <= config.target : value >= config.target;
     const progressColor = isTargetReached ? '#6EBE44' : '#005386';
-    const improvementPercentage = config.getPercentage(value, config.baseline);
+    const improvementPoints = config.getImprovement(value, config.baseline);
+    const isPositive = config.isQuality ? improvementPoints > 0 : improvementPoints > 0;
 
     return `
-        <div class="text-center">
+        <div class="indicator-card">
             <div class="indicator-title">${config.title}</div>
-            <div class="relative vertical-progress">
+            <div class="vertical-progress">
                 <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
-                    <span class="text-white font-bold">${value.toFixed(1)}${config.unit}</span>
+                    <span>${value.toFixed(1)}${config.unit}</span>
                 </div>
                 <div class="target-line" style="bottom: ${targetPercentage}%"></div>
             </div>
             <div class="target-value">Target: ${config.target}${config.unit}</div>
             <div class="initial-value">Initial Value: ${config.baseline}${config.unit}</div>
-            <div class="improvement-badge ${improvementPercentage < 0 ? 'negative' : 'positive'}">
-                Improvement: ${Math.abs(improvementPercentage)}%
+            <div class="improvement-badge ${isPositive ? 'positive' : 'negative'}">
+                ${improvementPoints >= 0 ? '+' : '-'}${Math.abs(improvementPoints)}
             </div>
         </div>
     `;
 }
 
-function getTotalImpact(key) {
-    return Object.keys(switchStates).reduce((acc, lever) => {
-        if (switchStates[lever]) {
-            acc += OPTIONS_IMPACT[lever][key];
-        }
-        return acc;
-    }, 0);
+function handleRealtimeUpdate(payload) {
+    if (payload.new && payload.new.name) {
+        switchStates[payload.new.name] = payload.new.is_active;
+        updateDisplay();
+    }
 }
 
 function updateDisplay() {
