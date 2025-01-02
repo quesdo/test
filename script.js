@@ -13,11 +13,11 @@ const DS_COLORS = {
 };
 
 const OPTIONS_IMPACT = {
-    amr: { quality: 0, capacity: 0, delivery: +4.0 },
-    ar: { quality: -2.25, capacity: 0, delivery: 0 },
+    amr: { quality: 0, capacity: 0, delivery: 8.0 },
+    ar: { quality: -2.15, capacity: 0, delivery: 0 },
     kitting: { quality: 0, capacity: +1.7, delivery: 0 },
-    assembly: { quality: -2.75, capacity: 0, delivery: 0 },
-    mes: { quality: 0, capacity: +1.7, delivery: +5.0 },
+    assembly: { quality: -2.95, capacity: 0, delivery: 0 },
+    mes: { quality: 0, capacity: +1.7, delivery: 0 },
     pick: { quality: 0, capacity: +0.5, delivery: 0 },
     line: { quality: 0, capacity: +1.6, delivery: 0 }
 };
