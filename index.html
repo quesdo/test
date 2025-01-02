@@ -9,6 +9,8 @@
         :root {
             --ds-blue: #005386;
             --ds-green: #6EBE44;
+            --ds-red: #FF4444;
+            --ds-orange: #FFA500;
         }
         
         body {
@@ -92,17 +94,25 @@
             font-size: 1.7rem;
         }
         
+        .vertical-fill span {
+            position: relative;
+            z-index: 3;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+        }
+        
         .target-line {
             position: absolute;
             width: 100%;
             height: 10px;
-            background-color: #ef4444;
             left: 0;
             z-index: 2;
         }
         
         .indicator-title {
-            font-size: 1.4rem;
+            font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 1rem;
             min-height: 3rem;
@@ -111,7 +121,6 @@
         .target-value {
             font-size: 1.7rem;
             margin-top: 1rem;
-            color: #ef4444;
             font-weight: bold;
         }
         
@@ -147,7 +156,7 @@
     <header class="header">
         <div style="display: flex; align-items: center; justify-content: center; width: 100%; gap: 1.5rem;">
             <img src="logo.png" alt="Logo" style="height: 95px;">
-            <h1 style="font-size: 2.2rem; font-weight: 600; color: white; margin: 0;">Quality, Productivity & Delivery Monitoring</h1>
+            <h1 style="font-size: 2.2rem; font-weight: 600; color: white; margin: 0;">Quality Cost & Delivery Monitoring</h1>
         </div>
     </header>
 

@@ -4,19 +4,27 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const { createClient } = supabase;
 const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
+// Couleurs DS
+const DS_COLORS = {
+    blue: '#005386',
+    green: '#6EBE44',
+    red: '#FF4444',
+    orange: '#FFA500'
+};
+
 const OPTIONS_IMPACT = {
     amr: { quality: 0, capacity: 0, delivery: +4.0 },
     ar: { quality: -2.25, capacity: 0, delivery: 0 },
-    kitting: { quality: 0, capacity: +1.7, delivery: 0 },
+    kitting: { quality: 0, capacity: +1.7, delivery: +2 },
     assembly: { quality: -2.75, capacity: 0, delivery: 0 },
-    mes: { quality: 0, capacity: +1.7, delivery: 0 },
-    pick: { quality: 0, capacity: +1.6, delivery: 0 },
-    line: { quality: 0, capacity: 0, delivery: +4.0 }
+    mes: { quality: 0, capacity: +1.7, delivery: +2 },
+    pick: { quality: 0, capacity: +0.5, delivery: 0 },
+    line: { quality: 0, capacity: +1.6, delivery: 0 }
 };
 
 const INDICATORS = {
     quality: { 
-        title: "Quality (Cost of non quality)", 
+        title: "Cost of non quality", 
         target: 4.0,
         baseline: 9.0,
         min: 0,
@@ -26,7 +34,7 @@ const INDICATORS = {
         getImprovement: (value, baseline) => (baseline - value).toFixed(1)
     },
     capacity: { 
-        title: "Productivity (Parts/Person/Hour)", 
+        title: "Productivity", 
         target: 12,
         baseline: 7,
         min: 0,
@@ -36,7 +44,7 @@ const INDICATORS = {
         getImprovement: (value, baseline) => (value - baseline).toFixed(1)
     },
     delivery: { 
-        title: "Delivery (Planning Adherence)", 
+        title: "Planning Adherence", 
         target: 95,
         baseline: 87,
         min: 0,
@@ -58,6 +66,32 @@ let switchStates = {
 };
 
 let channel = null;
+
+function getProgressColor(value, target, isQuality, config) {
+    if (isQuality) {
+        // Pour la qualité, plus bas est meilleur
+        const range = config.baseline - target; // écart entre baseline et target
+        const midPoint = target + (range * 0.4); // point où on passe de vert à orange
+        const highPoint = target + (range * 0.7); // point où on passe d'orange à rouge
+        
+        if (value <= midPoint) {
+            return DS_COLORS.green; // Proche de la target (bon)
+        } else if (value <= highPoint) {
+            return DS_COLORS.orange; // Zone intermédiaire
+        } else {
+            return DS_COLORS.red; // Proche de la baseline (mauvais)
+        }
+    } else {
+        // Pour les autres indicateurs, plus haut est meilleur
+        if (value >= target) {
+            return DS_COLORS.green; // Au-dessus ou égal à la target (bon)
+        } else if (value >= target * 0.8) {
+            return DS_COLORS.orange; // Au moins 80% de la target
+        } else {
+            return DS_COLORS.red; // Moins de 80% de la target
+        }
+    }
+}
 
 function getTotalImpact(key) {
     return Object.keys(switchStates).reduce((acc, lever) => {
@@ -87,7 +121,8 @@ function createProgressBar(key, config) {
 
     const targetPercentage = ((config.target - config.min) / (config.max - config.min)) * 100;
     const isTargetReached = config.isQuality ? value <= config.target : value >= config.target;
-    const progressColor = isTargetReached ? '#6EBE44' : '#005386';
+    const progressColor = getProgressColor(value, config.target, config.isQuality, config);
+    const targetColor = isTargetReached ? DS_COLORS.green : DS_COLORS.blue;
     const improvementPoints = config.getImprovement(value, config.baseline);
     const isPositive = config.isQuality ? improvementPoints > 0 : improvementPoints > 0;
 
@@ -98,9 +133,9 @@ function createProgressBar(key, config) {
                 <div class="vertical-fill" style="height: ${percentage}%; background-color: ${progressColor};">
                     <span>${value.toFixed(1)}${config.unit}</span>
                 </div>
-                <div class="target-line" style="bottom: ${targetPercentage}%"></div>
+                <div class="target-line" style="bottom: ${targetPercentage}%; background-color: ${targetColor};"></div>
             </div>
-            <div class="target-value">Target: ${config.target}${config.unit}</div>
+            <div class="target-value" style="color: ${targetColor}">Target: ${config.target}${config.unit}</div>
             <div class="initial-value">Initial Value: ${config.baseline}${config.unit}</div>
             <div class="improvement-badge ${isPositive ? 'positive' : 'negative'}">
                 ${improvementPoints >= 0 ? '+' : '-'}${Math.abs(improvementPoints)}
