@@ -17,7 +17,7 @@ const OPTIONS_IMPACT = {
     ar: { quality: -2.25, capacity: 0, delivery: 0 },
     kitting: { quality: 0, capacity: +1.7, delivery: 0 },
     assembly: { quality: -2.75, capacity: 0, delivery: 0 },
-    mes: { quality: 0, capacity: +1.7, delivery: +5 },
+    mes: { quality: 0, capacity: +1.7, delivery: +5.0 },
     pick: { quality: 0, capacity: +0.5, delivery: 0 },
     line: { quality: 0, capacity: +1.6, delivery: 0 }
 };
