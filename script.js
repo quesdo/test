@@ -30,7 +30,7 @@ const INDICATORS = {
         min: 0,
         max: 10.0,
         isQuality: true,
-        unit: "%",
+        unit: "% of COGS",
         getImprovement: (value, baseline) => (baseline - value).toFixed(1)
     },
     capacity: { 
